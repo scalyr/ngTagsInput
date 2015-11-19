@@ -46,6 +46,7 @@
  * @param {expression=} [onTagRemoved=NA] Expression to evaluate upon removing an existing tag. The removed tag is
  *    available as $tag.
  * @param {expression=} [onTagClicked=NA] Expression to evaluate upon clicking an existing tag. The clicked tag is available as $tag.
+ * @param {expression=} [getTagClass=NA] Determine a custom class for the tag (if any). The clicked tag is available as $tag.
  */
 tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInputConfig, tiUtil) {
     function TagList(options, events, onTagAdding, onTagRemoving) {
@@ -158,7 +159,8 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             onInvalidTag: '&',
             onTagRemoving: '&',
             onTagRemoved: '&',
-            onTagClicked: '&'
+            onTagClicked: '&',
+            getTagClass: '&'
         },
         replace: false,
         transclude: true,
@@ -293,6 +295,13 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             attrs.$observe('disabled', function(value) {
                 scope.disabled = value;
             });
+
+            scope.tagClass = function(tag) {
+                if (scope.getTagClass) {
+                    return scope.getTagClass({ $tag: tag });
+                }
+                return null;
+            };
 
             scope.eventHandlers = {
                 input: {
