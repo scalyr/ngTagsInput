@@ -25,7 +25,7 @@ tagsInput.directive('tiTagItem', function(tiUtil) {
                 return tiUtil.safeToString(scope.data[options.displayProperty]);
             };
             scope.$removeTag = function() {
-                tagsInput.removeTag(scope.$index);
+                tagsInput.removeTag(scope.$index, scope.data[options.displayProperty]);
             };
 
             scope.$watch('$parent.$index', function(value) {

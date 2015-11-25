@@ -1,8 +1,8 @@
-<div class="host" tabindex="-1" ng-click="eventHandlers.host.click()" ti-transclude-append>
+<div class="host" tabindex="-1" ng-click="eventHandlers.host.click($event)" ti-transclude-append>
   <div class="tags" ng-class="{focused: hasFocus}">
     <ul class="tag-list">
       <li class="tag-item"
-          ng-repeat="tag in tagList.items track by track(tag)"
+          ng-repeat="tag in tagList.preItems() track by track(tag)"
           ng-class="[tagClass(tag), { selected: tag == tagList.selected }]"
           ng-click="eventHandlers.tag.click(tag)">
         <ti-tag-item data="::tag"></ti-tag-item>
@@ -21,5 +21,14 @@
            ng-disabled="disabled"
            ti-bind-attrs="{type: options.type, placeholder: options.placeholder, tabindex: options.tabindex, spellcheck: options.spellcheck}"
            ti-autosize>
+    <ul class="tag-list">
+      <li class="tag-item"
+          ng-repeat="tag in tagList.postItems() track by track(tag)"
+          ng-class="[tagClass(tag), { selected: tag == tagList.selected }]"
+          ng-click="eventHandlers.tag.click(tag)">
+        <ti-tag-item data="::tag"></ti-tag-item>
+      </li>
+    </ul>
+    <span></span>
   </div>
 </div>

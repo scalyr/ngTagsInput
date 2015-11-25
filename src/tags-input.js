@@ -27,6 +27,8 @@
  * @param {boolean=} [addOnEnter=true] Flag indicating that a new tag will be added on pressing the ENTER key.
  * @param {boolean=} [addOnSpace=false] Flag indicating that a new tag will be added on pressing the SPACE key.
  * @param {boolean=} [addOnComma=true] Flag indicating that a new tag will be added on pressing the COMMA key.
+ * @param {boolean=} [addOnTab=true] Flag indicating that a new tag will be added on pressing the TAB key.
+ * @param {boolean=} [addOnSemicolon=False] Flag indicating that a new tag will be added on pressing the SEMICOLON key.
  * @param {boolean=} [addOnBlur=true] Flag indicating that a new tag will be added when the input field loses focus.
  * @param {boolean=} [addOnPaste=false] Flag indicating that the text pasted into the input field will be split into tags.
  * @param {string=} [pasteSplitPattern=,] Regular expression used to split the pasted text into tags.
@@ -71,7 +73,22 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                    onTagAdding({ $tag: tag });
         };
 
+        self.editPosition = -1;
         self.items = [];
+
+        self.preItems = function() {
+            if (self.editPosition === -1) {
+                return self.items;
+            }
+            return self.items.slice(0, self.editPosition);
+        };
+
+        self.postItems = function() {
+            if (self.editPosition === -1) {
+                return [];
+            }
+            return self.items.slice(self.editPosition);
+        };
 
         self.addText = function(text) {
             var tag = {};
@@ -89,7 +106,12 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             setTagText(tag, tagText);
 
             if (tagIsValid(tag)) {
-                self.items.push(tag);
+                if (self.editPosition !== -1) {
+                    self.items.splice(self.editPosition, 0, tag);
+                    self.editPosition = -1;
+                } else {
+                    self.items.push(tag);
+                }
                 events.trigger('tag-added', { $tag: tag });
             }
             else if (tagText) {
@@ -99,10 +121,21 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             return tag;
         };
 
-        self.remove = function(index) {
+        self.remove = function(index, text) {
             var tag = self.items[index];
 
+            for (var i=0; i<self.items.length; i++) {
+                if (self.items[i][options.displayProperty] === text) {
+                    tag = self.items[i];
+                    index = i;
+                }
+            }
+
             if (onTagRemoving({ $tag: tag }))  {
+                if (index < self.editPosition) {
+                    self.editPosition--;
+                }
+
                 self.items.splice(index, 1);
                 self.clearSelection();
                 events.trigger('tag-removed', { $tag: tag });
@@ -128,6 +161,17 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
 
         self.selectNext = function() {
             self.select(++self.index);
+        };
+
+        self.editSelected = function(tag) {
+            for (var i=0; i<self.items.length; i++) {
+                if (self.items[i] === tag) {
+                    self.items.splice(i, 1);
+                    self.editPosition = i;
+                    self.index = i;
+                    return;
+                }
+            }
         };
 
         self.removeSelected = function() {
@@ -180,6 +224,8 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                 addOnEnter: [Boolean, true],
                 addOnSpace: [Boolean, false],
                 addOnComma: [Boolean, true],
+                addOnTab: [Boolean, false],
+                addOnSemicolon: [Boolean, false],
                 addOnBlur: [Boolean, true],
                 addOnPaste: [Boolean, false],
                 pasteSplitPattern: [RegExp, /,/],
@@ -229,17 +275,17 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     getOptions: function() {
                         return $scope.options;
                     },
-                    removeTag: function(index) {
+                    removeTag: function(index, text) {
                         if ($scope.disabled) {
                             return;
                         }
-                        $scope.tagList.remove(index);
+                        $scope.tagList.remove(index, text);
                     }
                 };
             };
         },
         link: function(scope, element, attrs, ngModelCtrl) {
-            var hotkeys = [KEYS.enter, KEYS.comma, KEYS.space, KEYS.backspace, KEYS.delete, KEYS.left, KEYS.right],
+            var hotkeys = [KEYS.enter, KEYS.comma, KEYS.space, KEYS.backspace, KEYS.delete, KEYS.left, KEYS.right, KEYS.tab, KEYS.semicolon],
                 tagList = scope.tagList,
                 events = scope.events,
                 options = scope.options,
@@ -337,16 +383,34 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     }
                 },
                 host: {
-                    click: function() {
+                    click: function(event) {
                         if (scope.disabled) {
                             return;
                         }
+
+                        if (angular.element(event.target).hasClass('tags') && tagList.editPosition !== -1) {
+                            if (options.addOnBlur && !options.addFromAutocompleteOnly) {
+                                tagList.addText(scope.newTag.text());
+                            }
+                        }
+
                         input[0].focus();
                     }
                 },
                 tag: {
                     click: function(tag) {
+                        if (options.addOnBlur && !options.addFromAutocompleteOnly) {
+                            tagList.addText(scope.newTag.text());
+                        }
+                        element.triggerHandler('blur');
+                        setElementValidity();
+
                         events.trigger('tag-clicked', { $tag: tag });
+
+                        if (tag) {
+                            tagList.editSelected(tag);
+                            scope.newTag.text(tag[options.displayProperty]);
+                        }
                     }
                 }
             };
@@ -398,14 +462,25 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                         return;
                     }
 
-                    addKeys[KEYS.enter] = options.addOnEnter;
-                    addKeys[KEYS.comma] = options.addOnComma;
+                    function isEmpty() {
+                        return scope.newTag.text().length === 0;
+                    }
+
+                    function inQuotedString() {
+                        var txt = scope.newTag.text().replace(/\\'/g, '"');
+                        return (txt.match(/'/g)||[]).length % 2;
+                    }
+
+                    addKeys[KEYS.enter] = options.addOnEnter && !isEmpty();
+                    addKeys[KEYS.comma] = options.addOnComma && !inQuotedString();
                     addKeys[KEYS.space] = options.addOnSpace;
+                    addKeys[KEYS.semicolon] = options.addOnSemicolon && !inQuotedString();
+                    addKeys[KEYS.tab] = options.addOnTab && !isEmpty();
 
                     shouldAdd = !options.addFromAutocompleteOnly && addKeys[key];
                     shouldRemove = (key === KEYS.backspace || key === KEYS.delete) && tagList.selected;
-                    shouldEditLastTag = key === KEYS.backspace && scope.newTag.text().length === 0 && options.enableEditingLastTag;
-                    shouldSelect = (key === KEYS.backspace || key === KEYS.left || key === KEYS.right) && scope.newTag.text().length === 0 && !options.enableEditingLastTag;
+                    shouldEditLastTag = key === KEYS.backspace && isEmpty() && options.enableEditingLastTag;
+                    shouldSelect = (key === KEYS.backspace || key === KEYS.left || key === KEYS.right) && isEmpty() && !options.enableEditingLastTag;
 
                     if (shouldAdd) {
                         tagList.addText(scope.newTag.text());
