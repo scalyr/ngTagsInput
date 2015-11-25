@@ -388,13 +388,14 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                             return;
                         }
 
-                        if (angular.element(event.target).hasClass('tags') && tagList.editPosition !== -1) {
-                            if (options.addOnBlur && !options.addFromAutocompleteOnly) {
-                                tagList.addText(scope.newTag.text());
+                        $timeout(function() {
+                            if (angular.element(event.target).hasClass('tags') && tagList.editPosition !== -1) {
+                                if (options.addOnBlur && !options.addFromAutocompleteOnly) {
+                                    tagList.addText(scope.newTag.text());
+                                }
                             }
-                        }
-
-                        input[0].focus();
+                            input[0].focus();
+                        });
                     }
                 },
                 tag: {

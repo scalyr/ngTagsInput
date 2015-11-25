@@ -192,6 +192,8 @@ describe('tags-input directive', function() {
             // /Act
             element.find('div').click();
 
+            $timeout.flush();
+
             // Assert
             expect(input.focus).toHaveBeenCalled();
         });
