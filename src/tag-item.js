@@ -24,6 +24,15 @@ tagsInput.directive('tiTagItem', function(tiUtil) {
             scope.$getDisplayText = function() {
                 return tiUtil.safeToString(scope.data[options.displayProperty]);
             };
+
+            scope.$getTagClass = function() {
+                return tagsInputCtrl.getTagClass( { $tag: { text: scope.$getDisplayText() }} );
+            };
+
+            scope.$getTagStructure = function() {
+                return tagsInputCtrl.getTagStructure( { $tag: { text: scope.$getDisplayText() }} );
+            };
+
             scope.$removeTag = function() {
                 tagsInput.removeTag(scope.$index, scope.data[options.displayProperty]);
             };

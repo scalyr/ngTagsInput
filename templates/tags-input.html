@@ -1,10 +1,11 @@
-<div class="host" tabindex="-1" ng-click="eventHandlers.host.click($event)" ti-transclude-append>
+<div class="host" tabindex="-1" ng-click="eventHandlers.host.click($event)" ng-mousedown="eventHandlers.host.mousedown($event)" ti-transclude-append>
   <div class="tags" ng-class="{focused: hasFocus}">
     <ul class="tag-list">
       <li class="tag-item"
           ng-repeat="tag in tagList.preItems() track by track(tag)"
           ng-class="[tagClass(tag), { selected: tag == tagList.selected }]"
-          ng-click="eventHandlers.tag.click(tag)">
+          ng-click="eventHandlers.tag.click($event, tag)"
+          ng-mousedown="eventHandlers.tag.mousedown($event, tag)">
         <ti-tag-item data="::tag"></ti-tag-item>
       </li>
     </ul>
@@ -13,6 +14,7 @@
            ng-model="newTag.text"
            ng-model-options="{getterSetter: true}"
            ng-keydown="eventHandlers.input.keydown($event)"
+           ng-keypress="eventHandlers.input.keypress($event)"
            ng-focus="eventHandlers.input.focus($event)"
            ng-blur="eventHandlers.input.blur($event)"
            ng-paste="eventHandlers.input.paste($event)"
@@ -25,7 +27,8 @@
       <li class="tag-item"
           ng-repeat="tag in tagList.postItems() track by track(tag)"
           ng-class="[tagClass(tag), { selected: tag == tagList.selected }]"
-          ng-click="eventHandlers.tag.click(tag)">
+          ng-click="eventHandlers.tag.click($event, tag)"
+          ng-mousedown="eventHandlers.tag.mousedown($event, tag)">
         <ti-tag-item data="::tag"></ti-tag-item>
       </li>
     </ul>

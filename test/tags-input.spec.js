@@ -63,12 +63,16 @@ describe('tags-input directive', function() {
     }
 
     function newTag(tag, key) {
-        key = key || KEYS.enter;
+        key = key || KEYCODES.enter;
 
         for(var i = 0; i < tag.length; i++) {
             sendKeyPress(tag.charCodeAt(i));
         }
-        sendKeyDown(key);
+        if (CHARCODES.contains(key)) {
+            sendKeyPress(key);
+        } else {
+            sendKeyDown(key);
+        }
     }
 
     function sendKeyPress(charCode) {
@@ -89,7 +93,7 @@ describe('tags-input directive', function() {
     }
 
     function sendBackspace() {
-        var event = sendKeyDown(KEYS.backspace);
+        var event = sendKeyDown(KEYCODES.backspace);
         if (!event.isDefaultPrevented()) {
             var input = getInput();
             var value = input.val();
@@ -378,6 +382,8 @@ describe('tags-input directive', function() {
             // Act
             getInput().triggerHandler('focus');
 
+            $timeout.flush();
+
             // Assert
             expect(isolateScope.hasFocus).toBe(true);
             expect($scope.$digest).toHaveBeenCalled();
@@ -493,7 +499,7 @@ describe('tags-input directive', function() {
             compile('add-on-enter="true"');
 
             // Act
-            newTag('foo', KEYS.enter);
+            newTag('foo', KEYCODES.enter);
 
             // Assert
             expect($scope.tags).toEqual([{ text: 'foo' }]);
@@ -504,7 +510,7 @@ describe('tags-input directive', function() {
             compile('add-on-enter="false"');
 
             // Act
-            newTag('foo', KEYS.enter);
+            newTag('foo', KEYCODES.enter);
 
             // Assert
             expect($scope.tags).toBeUndefined();
@@ -525,7 +531,7 @@ describe('tags-input directive', function() {
             compile('add-on-space="true"');
 
             // Act
-            newTag('foo', KEYS.space);
+            newTag('foo', KEYCODES.space);
 
             // Assert
             expect($scope.tags).toEqual([{ text: 'foo' }]);
@@ -536,7 +542,7 @@ describe('tags-input directive', function() {
             compile('add-on-space="false"');
 
             // Act
-            newTag('foo', KEYS.space);
+            newTag('foo', KEYCODES.space);
 
             // Assert
             expect($scope.tags).toBeUndefined();
@@ -557,18 +563,18 @@ describe('tags-input directive', function() {
             compile('add-on-comma="true"');
 
             // Act
-            newTag('foo', KEYS.comma);
+            newTag('foo', CHARCODES.comma);
 
             // Assert
             expect($scope.tags).toEqual([{ text: 'foo' }]);
         });
 
-        it('does not add a new tag when the space key is pressed and the option is false', function() {
+        it('does not add a new tag when the comma key is pressed and the option is false', function() {
             // Arrange
             compile('add-on-comma="false"');
 
             // Act
-            newTag('foo', KEYS.comma);
+            newTag('foo', CHARCODES.comma);
 
             // Assert
             expect($scope.tags).toBeUndefined();
@@ -1491,7 +1497,7 @@ describe('tags-input directive', function() {
 
             it('does not add a tag when the enter key is pressed', function() {
                 // Act
-                newTag('foo', KEYS.enter);
+                newTag('foo', KEYCODES.enter);
 
                 // Assert
                 expect($scope.tags).toBeUndefined();
@@ -1499,7 +1505,7 @@ describe('tags-input directive', function() {
 
             it('does not add a tag when the comma key is pressed', function() {
                 // Act
-                newTag('foo', KEYS.comma);
+                newTag('foo', KEYCODES.comma);
 
                 // Assert
                 expect($scope.tags).toBeUndefined();
@@ -1507,7 +1513,7 @@ describe('tags-input directive', function() {
 
             it('does not add a tag when the space key is pressed', function() {
                 // Act
-                newTag('foo', KEYS.space);
+                newTag('foo', KEYCODES.space);
 
                 // Assert
                 expect($scope.tags).toBeUndefined();
@@ -1634,16 +1640,16 @@ describe('tags-input directive', function() {
                 $scope.$digest();
 
                 // Act/Assert
-                sendKeyDown(KEYS.left);
+                sendKeyDown(KEYCODES.left);
                 expect(isolateScope.tagList.selected).toBe($scope.tags[2]);
 
-                sendKeyDown(KEYS.left);
+                sendKeyDown(KEYCODES.left);
                 expect(isolateScope.tagList.selected).toBe($scope.tags[1]);
 
-                sendKeyDown(KEYS.left);
+                sendKeyDown(KEYCODES.left);
                 expect(isolateScope.tagList.selected).toBe($scope.tags[0]);
 
-                sendKeyDown(KEYS.left);
+                sendKeyDown(KEYCODES.left);
                 expect(isolateScope.tagList.selected).toBe($scope.tags[2]);
             });
 
@@ -1653,16 +1659,16 @@ describe('tags-input directive', function() {
                 $scope.$digest();
 
                 // Act/Assert
-                sendKeyDown(KEYS.right);
+                sendKeyDown(KEYCODES.right);
                 expect(isolateScope.tagList.selected).toBe($scope.tags[0]);
 
-                sendKeyDown(KEYS.right);
+                sendKeyDown(KEYCODES.right);
                 expect(isolateScope.tagList.selected).toBe($scope.tags[1]);
 
-                sendKeyDown(KEYS.right);
+                sendKeyDown(KEYCODES.right);
                 expect(isolateScope.tagList.selected).toBe($scope.tags[2]);
 
-                sendKeyDown(KEYS.right);
+                sendKeyDown(KEYCODES.right);
                 expect(isolateScope.tagList.selected).toBe($scope.tags[0]);
             });
 
@@ -1670,10 +1676,10 @@ describe('tags-input directive', function() {
                 // Arrange
                 $scope.tags = generateTags(3);
                 $scope.$digest();
-                sendKeyDown(KEYS.left);
+                sendKeyDown(KEYCODES.left);
 
                 // Act
-                sendKeyDown(KEYS.backspace);
+                sendKeyDown(KEYCODES.backspace);
 
                 // Assert
                 expect($scope.tags).toEqual([{ text: 'Tag1' }, { text: 'Tag2' }]);
@@ -1683,10 +1689,10 @@ describe('tags-input directive', function() {
                 // Arrange
                 $scope.tags = generateTags(3);
                 $scope.$digest();
-                sendKeyDown(KEYS.left);
+                sendKeyDown(KEYCODES.left);
 
                 // Act
-                sendKeyDown(KEYS.delete);
+                sendKeyDown(KEYCODES.delete);
 
                 // Assert
                 expect($scope.tags).toEqual([{ text: 'Tag1' }, { text: 'Tag2' }]);
@@ -1696,7 +1702,7 @@ describe('tags-input directive', function() {
                 // Arrange
                 $scope.tags = generateTags(3);
                 $scope.$digest();
-                sendKeyDown(KEYS.left);
+                sendKeyDown(KEYCODES.left);
 
                 // Act
                 changeInputValue('foo');
@@ -2005,7 +2011,7 @@ describe('tags-input directive', function() {
     });
 
     describe('hotkeys propagation handling', function() {
-        var hotkeys = [KEYS.enter, KEYS.comma, KEYS.space, KEYS.backspace];
+        var hotkeys = [KEYCODES.enter, KEYCODES.comma, KEYCODES.space, KEYCODES.backspace];
 
         beforeEach(function() {
             compile('add-on-enter="true"', 'add-on-space="true"', 'add-on-comma="true"');
@@ -2034,7 +2040,7 @@ describe('tags-input directive', function() {
         describe('modifier key is off', function() {
             it('prevents enter, comma and space keys from being propagated when all modifiers are up', function() {
                 // Arrange
-                hotkeys = [KEYS.enter, KEYS.comma, KEYS.space];
+                hotkeys = [KEYCODES.enter, KEYCODES.comma, KEYCODES.space];
 
                 // Act/Assert
                 //angular.forEach(hotkeys, function(key) {
@@ -2052,7 +2058,7 @@ describe('tags-input directive', function() {
                 isolateScope.tryRemoveLast = function() { return true; };
 
                 // Act/Assert
-                expect(sendKeyDown(KEYS.backspace).isDefaultPrevented()).toBe(true);
+                expect(sendKeyDown(KEYCODES.backspace).isDefaultPrevented()).toBe(true);
             });
         });
     });

@@ -265,7 +265,7 @@ describe('autoComplete directive', function() {
             $scope.$digest();
 
             // Act
-            sendKeyDown(KEYS.escape);
+            sendKeyDown(KEYCODES.escape);
             $scope.$digest();
 
             // Assert
@@ -291,7 +291,7 @@ describe('autoComplete directive', function() {
             suggestionList.select(0);
 
             // Act
-            sendKeyDown(KEYS.enter);
+            sendKeyDown(KEYCODES.enter);
             $scope.$digest();
 
             // Assert
@@ -337,7 +337,7 @@ describe('autoComplete directive', function() {
             suggestionList.select(0);
 
             // Act
-            sendKeyDown(KEYS.enter);
+            sendKeyDown(KEYCODES.enter);
 
             // Assert
             expect(tagsInput.addTag).toHaveBeenCalledWith({ text: 'Item1' });
@@ -349,7 +349,7 @@ describe('autoComplete directive', function() {
             suggestionList.select(0);
 
             // Act
-            sendKeyDown(KEYS.tab);
+            sendKeyDown(KEYCODES.tab);
 
             // Assert
             expect(tagsInput.addTag).toHaveBeenCalledWith({ text: 'Item1' });
@@ -374,7 +374,7 @@ describe('autoComplete directive', function() {
             suggestionList.selected = null;
 
             // Act
-            sendKeyDown(KEYS.enter);
+            sendKeyDown(KEYCODES.enter);
 
             // Assert
             expect(tagsInput.addTag).not.toHaveBeenCalled();
@@ -398,7 +398,7 @@ describe('autoComplete directive', function() {
             suggestionList.select(0);
 
             // Act
-            sendKeyDown(KEYS.enter);
+            sendKeyDown(KEYCODES.enter);
 
             // Assert
             expect($scope.loadItems.calls.count()).toBe(1);
@@ -540,7 +540,7 @@ describe('autoComplete directive', function() {
                 suggestionList.select(0);
 
                 // Act
-                sendKeyDown(KEYS.down);
+                sendKeyDown(KEYCODES.down);
 
                 // Assert
                 expect(suggestionList.selected).toEqual({ text: 'Item2' });
@@ -551,7 +551,7 @@ describe('autoComplete directive', function() {
                 suggestionList.select(2);
 
                 // Act
-                sendKeyDown(KEYS.down);
+                sendKeyDown(KEYCODES.down);
 
                 // Assert
                 expect(suggestionList.selected).toEqual({ text: 'Item1' });
@@ -564,7 +564,7 @@ describe('autoComplete directive', function() {
                 suggestionList.select(1);
 
                 // Act
-                sendKeyDown(KEYS.up);
+                sendKeyDown(KEYCODES.up);
 
                 // Assert
                 expect(suggestionList.selected).toEqual({ text: 'Item1' });
@@ -575,7 +575,7 @@ describe('autoComplete directive', function() {
                 suggestionList.select(0);
 
                 // Act
-                sendKeyDown(KEYS.up);
+                sendKeyDown(KEYCODES.up);
 
                 // Assert
                 expect(suggestionList.selected).toEqual({ text: 'Item3' });
@@ -635,7 +635,7 @@ describe('autoComplete directive', function() {
                 tagsInput.getCurrentTagText.and.returnValue('ABC');
 
                 // Act
-                sendKeyDown(KEYS.down);
+                sendKeyDown(KEYCODES.down);
                 $timeout.flush();
 
                 // Assert
@@ -646,7 +646,7 @@ describe('autoComplete directive', function() {
                 compile('load-on-down-arrow="false"');
 
                 // Act
-                sendKeyDown(KEYS.down);
+                sendKeyDown(KEYCODES.down);
                 $timeout.flush();
 
                 // Assert
@@ -661,7 +661,7 @@ describe('autoComplete directive', function() {
                 suggestionList.visible = true;
 
                 // Act
-                sendKeyDown(KEYS.down);
+                sendKeyDown(KEYCODES.down);
                 $timeout.flush();
 
                 // Assert
@@ -1160,7 +1160,7 @@ describe('autoComplete directive', function() {
 
     describe('keys propagation handling', function() {
         describe('hotkeys', function() {
-            var hotkeys = [KEYS.enter, KEYS.tab, KEYS.escape, KEYS.up, KEYS.down];
+            var hotkeys = [KEYCODES.enter, KEYCODES.tab, KEYCODES.escape, KEYCODES.up, KEYCODES.down];
 
             describe('suggestion box is visible', function() {
                 beforeEach(function() {
@@ -1169,7 +1169,7 @@ describe('autoComplete directive', function() {
 
                 it('prevents the down arrow keydown event from being propagated', function() {
                     // Act
-                    var event = sendKeyDown(KEYS.down);
+                    var event = sendKeyDown(KEYCODES.down);
 
                     // Assert
                     expect(event.isDefaultPrevented()).toBe(true);
@@ -1178,7 +1178,7 @@ describe('autoComplete directive', function() {
 
                 it('prevents the up arrow keydown event from being propagated', function() {
                     // Act
-                    var event = sendKeyDown(KEYS.up);
+                    var event = sendKeyDown(KEYCODES.up);
 
                     // Assert
                     expect(event.isDefaultPrevented()).toBe(true);
@@ -1190,7 +1190,7 @@ describe('autoComplete directive', function() {
                     suggestionList.selected = 'suggestion';
 
                     // Act
-                    var event = sendKeyDown(KEYS.enter);
+                    var event = sendKeyDown(KEYCODES.enter);
 
                     // Assert
                     expect(event.isDefaultPrevented()).toBe(true);
@@ -1202,7 +1202,7 @@ describe('autoComplete directive', function() {
                     suggestionList.selected = null;
 
                     // Act
-                    var event = sendKeyDown(KEYS.enter);
+                    var event = sendKeyDown(KEYCODES.enter);
 
                     // Assert
                     expect(event.isDefaultPrevented()).toBe(false);
@@ -1214,7 +1214,7 @@ describe('autoComplete directive', function() {
                     suggestionList.selected = 'suggestion';
 
                     // Act
-                    var event = sendKeyDown(KEYS.tab);
+                    var event = sendKeyDown(KEYCODES.tab);
 
                     // Assert
                     expect(event.isDefaultPrevented()).toBe(true);
@@ -1226,7 +1226,7 @@ describe('autoComplete directive', function() {
                     suggestionList.selected = null;
 
                     // Act
-                    var event = sendKeyDown(KEYS.tab);
+                    var event = sendKeyDown(KEYCODES.tab);
 
                     // Assert
                     expect(event.isDefaultPrevented()).toBe(false);
@@ -1235,7 +1235,7 @@ describe('autoComplete directive', function() {
 
                 it('prevents the escape keydown event from being propagated', function() {
                     // Act
-                    var event = sendKeyDown(KEYS.escape);
+                    var event = sendKeyDown(KEYCODES.escape);
 
                     // Assert
                     expect(event.isDefaultPrevented()).toBe(true);

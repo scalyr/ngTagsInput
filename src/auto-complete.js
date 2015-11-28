@@ -164,7 +164,7 @@ tagsInput.directive('autoComplete', function($document, $timeout, $sce, $q, tags
             };
         },
         link: function(scope, element, attrs, tagsInputCtrl) {
-            var hotkeys = [KEYS.enter, KEYS.tab, KEYS.escape, KEYS.up, KEYS.down],
+            var hotkeys = [KEYCODES.enter, KEYCODES.tab, KEYCODES.escape, KEYCODES.up, KEYCODES.down],
                 suggestionList = scope.suggestionList,
                 tagsInput = tagsInputCtrl.registerAutocomplete(),
                 options = scope.options,
@@ -227,24 +227,24 @@ tagsInput.directive('autoComplete', function($document, $timeout, $sce, $q, tags
 
                     if (suggestionList.visible) {
 
-                        if (key === KEYS.down) {
+                        if (key === KEYCODES.down) {
                             suggestionList.selectNext();
                             handled = true;
                         }
-                        else if (key === KEYS.up) {
+                        else if (key === KEYCODES.up) {
                             suggestionList.selectPrior();
                             handled = true;
                         }
-                        else if (key === KEYS.escape) {
+                        else if (key === KEYCODES.escape) {
                             suggestionList.reset();
                             handled = true;
                         }
-                        else if (key === KEYS.enter || key === KEYS.tab) {
+                        else if (key === KEYCODES.enter || key === KEYCODES.tab) {
                             handled = scope.addSuggestion();
                         }
                     }
                     else {
-                        if (key === KEYS.down && scope.options.loadOnDownArrow) {
+                        if (key === KEYCODES.down && scope.options.loadOnDownArrow) {
                             suggestionList.load(tagsInput.getCurrentTagText(), tagsInput.getTags());
                             handled = true;
                         }

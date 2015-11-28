@@ -1,6 +1,6 @@
 'use strict';
 
-var KEYS = {
+var KEYCODES = {
     backspace: 8,
     tab: 9,
     enter: 13,
@@ -10,9 +10,16 @@ var KEYS = {
     down: 40,
     left: 37,
     right: 39,
-    delete: 46,
-    comma: 188,
-    semicolon: 186
+    delete: 46
+};
+
+var CHARCODES = {
+    comma: 44,
+    semicolon: 59,
+    contains: function(key) {
+        return key === CHARCODES.comma ||
+               key === CHARCODES.semicolon;
+    }
 };
 
 var MAX_SAFE_INTEGER = 9007199254740991;

@@ -32,7 +32,8 @@
         "range": true,
         "changeElementValue": true,
         "customMatchers": true,
-        "KEYS": true,
+        "KEYCODES": true,
+        "CHARCODES": true,
         "MAX_SAFE_INTEGER": true,
         "SUPPORTED_INPUT_TYPES": true
     }

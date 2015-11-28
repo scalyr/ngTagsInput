@@ -49,6 +49,7 @@
  *    available as $tag.
  * @param {expression=} [onTagClicked=NA] Expression to evaluate upon clicking an existing tag. The clicked tag is available as $tag.
  * @param {expression=} [getTagClass=NA] Determine a custom class for the tag (if any). The clicked tag is available as $tag.
+ * @param {expression=} [getTagStructure=NA] Determine a custom class for the tag (if any). The clicked tag is available as $tag.
  */
 tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInputConfig, tiUtil) {
     function TagList(options, events, onTagAdding, onTagRemoving) {
@@ -88,6 +89,10 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                 return [];
             }
             return self.items.slice(self.editPosition);
+        };
+
+        self.tagIsComplete = function(text) {
+            return tagIsValid({'text': text});
         };
 
         self.addText = function(text) {
@@ -204,7 +209,8 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             onTagRemoving: '&',
             onTagRemoved: '&',
             onTagClicked: '&',
-            getTagClass: '&'
+            getTagClass: '&',
+            getTagStructure: '&'
         },
         replace: false,
         transclude: true,
@@ -283,9 +289,12 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     }
                 };
             };
+
+            this.getTagClass = $scope.getTagClass;
+            this.getTagStructure = $scope.getTagStructure;
         },
         link: function(scope, element, attrs, ngModelCtrl) {
-            var hotkeys = [KEYS.enter, KEYS.comma, KEYS.space, KEYS.backspace, KEYS.delete, KEYS.left, KEYS.right, KEYS.tab, KEYS.semicolon],
+            var hotkeys = [KEYCODES.enter, KEYCODES.space, KEYCODES.backspace, KEYCODES.delete, KEYCODES.left, KEYCODES.right, KEYCODES.tab],
                 tagList = scope.tagList,
                 events = scope.events,
                 options = scope.options,
@@ -354,6 +363,9 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     keydown: function($event) {
                         events.trigger('input-keydown', $event);
                     },
+                    keypress: function($event) {
+                        events.trigger('input-keypress', $event);
+                    },
                     focus: function() {
                         if (scope.hasFocus) {
                             return;
@@ -383,6 +395,21 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     }
                 },
                 host: {
+                    // TODO fix DRY here
+                    mousedown: function(event) {
+                        if (scope.disabled) {
+                            return;
+                        }
+
+                        $timeout(function() {
+                            if (angular.element(event.target).hasClass('tags') && tagList.editPosition !== -1) {
+                                if (options.addOnBlur && !options.addFromAutocompleteOnly) {
+                                    tagList.addText(scope.newTag.text());
+                                }
+                            }
+                            input[0].focus();
+                        });
+                    },
                     click: function(event) {
                         if (scope.disabled) {
                             return;
@@ -399,11 +426,20 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     }
                 },
                 tag: {
-                    click: function(tag) {
+                    // TODO fix DRY here
+                    mousedown: function(event, tag) {
+                        // let clicks on the remove button go through
+                        if (angular.element(event.target).hasClass('remove-button')) {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        event.stopPropagation();
+
                         if (options.addOnBlur && !options.addFromAutocompleteOnly) {
                             tagList.addText(scope.newTag.text());
                         }
-                        element.triggerHandler('blur');
+//                        element.triggerHandler('blur');
                         setElementValidity();
 
                         events.trigger('tag-clicked', { $tag: tag });
@@ -411,10 +447,73 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                         if (tag) {
                             tagList.editSelected(tag);
                             scope.newTag.text(tag[options.displayProperty]);
+                            $timeout(function() {
+                                input[0].focus();
+                            });
+                        }
+                    },
+                    click: function(event, tag) {
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        if (options.addOnBlur && !options.addFromAutocompleteOnly) {
+                            tagList.addText(scope.newTag.text());
+                        }
+//                        element.triggerHandler('blur');
+                        setElementValidity();
+
+                        events.trigger('tag-clicked', { $tag: tag });
+
+                        if (tag) {
+                            tagList.editSelected(tag);
+                            scope.newTag.text(tag[options.displayProperty]);
+                            $timeout(function() {
+                                input[0].focus();
+                            });
                         }
                     }
                 }
             };
+
+            function isEmpty() {
+                return scope.newTag.text().length === 0;
+            }
+
+            function inQuotedString() {
+                var txt = scope.newTag.text().replace(/\\'/g, '"');
+                return (txt.match(/'/g)||[]).length % 2;
+            }
+
+            function handleKeyEvent(event, key, shouldAdd, shouldEditLastTag, shouldRemove, shouldSelect) {
+                if (shouldAdd) {
+                    tagList.addText(scope.newTag.text());
+                }
+                else if (shouldEditLastTag) {
+                    var tag;
+
+                    tagList.selectPrior();
+                    tag = tagList.removeSelected();
+
+                    if (tag) {
+                        scope.newTag.text(tag[options.displayProperty]);
+                    }
+                }
+                else if (shouldRemove) {
+                    tagList.removeSelected();
+                }
+                else if (shouldSelect) {
+                    if (key === KEYCODES.left || key === KEYCODES.backspace) {
+                        tagList.selectPrior();
+                    }
+                    else if (key === KEYCODES.right) {
+                        tagList.selectNext();
+                    }
+                }
+
+                if (shouldAdd || shouldSelect || shouldRemove || shouldEditLastTag) {
+                    event.preventDefault();
+                }
+            }
 
             events
                 .on('tag-added', scope.onTagAdded)
@@ -463,53 +562,30 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                         return;
                     }
 
-                    function isEmpty() {
-                        return scope.newTag.text().length === 0;
-                    }
-
-                    function inQuotedString() {
-                        var txt = scope.newTag.text().replace(/\\'/g, '"');
-                        return (txt.match(/'/g)||[]).length % 2;
-                    }
-
-                    addKeys[KEYS.enter] = options.addOnEnter && !isEmpty();
-                    addKeys[KEYS.comma] = options.addOnComma && !inQuotedString();
-                    addKeys[KEYS.space] = options.addOnSpace;
-                    addKeys[KEYS.semicolon] = options.addOnSemicolon && !inQuotedString();
-                    addKeys[KEYS.tab] = options.addOnTab && !isEmpty();
+                    addKeys[KEYCODES.enter] = options.addOnEnter && !isEmpty();
+                    addKeys[KEYCODES.space] = options.addOnSpace;
+                    addKeys[KEYCODES.tab] = options.addOnTab && !isEmpty();
 
                     shouldAdd = !options.addFromAutocompleteOnly && addKeys[key];
-                    shouldRemove = (key === KEYS.backspace || key === KEYS.delete) && tagList.selected;
-                    shouldEditLastTag = key === KEYS.backspace && isEmpty() && options.enableEditingLastTag;
-                    shouldSelect = (key === KEYS.backspace || key === KEYS.left || key === KEYS.right) && isEmpty() && !options.enableEditingLastTag;
+                    shouldRemove = (key === KEYCODES.backspace || key === KEYCODES.delete) && tagList.selected;
+                    shouldEditLastTag = key === KEYCODES.backspace && isEmpty() && options.enableEditingLastTag;
+                    shouldSelect = (key === KEYCODES.backspace || key === KEYCODES.left || key === KEYCODES.right) && isEmpty() && !options.enableEditingLastTag;
 
-                    if (shouldAdd) {
-                        tagList.addText(scope.newTag.text());
-                    }
-                    else if (shouldEditLastTag) {
-                        var tag;
+                    handleKeyEvent(event, key, shouldAdd, shouldEditLastTag, shouldRemove, shouldSelect);
+                })
+                .on('input-keypress', function(event) {
+                    var key = event.charCode,
+                        shouldAdd = false;
 
-                        tagList.selectPrior();
-                        tag = tagList.removeSelected();
-
-                        if (tag) {
-                            scope.newTag.text(tag[options.displayProperty]);
+                    if (!tiUtil.isModifierOn(event)) {
+                        var text = scope.newTag.text();
+                        shouldAdd |= options.addOnComma && key === CHARCODES.comma;
+                        shouldAdd |= options.addOnSemicolon && key === CHARCODES.semicolon;
+                        shouldAdd &= !options.addFromAutocompleteOnly;
+                        if (shouldAdd && tagList.tagIsComplete(text)) {
+                            tagList.addText(text);
+                            event.preventDefault();
                         }
-                    }
-                    else if (shouldRemove) {
-                        tagList.removeSelected();
-                    }
-                    else if (shouldSelect) {
-                        if (key === KEYS.left || key === KEYS.backspace) {
-                            tagList.selectPrior();
-                        }
-                        else if (key === KEYS.right) {
-                            tagList.selectNext();
-                        }
-                    }
-
-                    if (shouldAdd || shouldSelect || shouldRemove || shouldEditLastTag) {
-                        event.preventDefault();
                     }
                 })
                 .on('input-paste', function(event) {
