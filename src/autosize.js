@@ -8,7 +8,7 @@
  * @description
  * Automatically sets the input's width so its content is always visible. Used internally by tagsInput directive.
  */
-tagsInput.directive('tiAutosize', function(tagsInputConfig) {
+tagsInput.directive('tiAutosize', function(tagsInputConfig, $window) {
     return {
         restrict: 'A',
         require: 'ngModel',
@@ -38,7 +38,17 @@ tagsInput.directive('tiAutosize', function(tagsInputConfig) {
                     span.css('display', 'none');
                 }
 
+                var maxWidth = element.parent()[0].offsetWidth - 5;
+                if (maxWidth < 10) maxWidth = 10;
+                var height = width/maxWidth;
+                if (width > maxWidth) width = maxWidth;
                 element.css('width', width ? width + threshold + 'px' : '');
+                if (height <1) {
+                    element.css('height', '26px');
+                } else {
+                    element.css('height', Math.floor(2.2 + height) + 'em');
+                }
+                element.css('padding-top', '5px'); //TODO a bunch of hardcoded stuff here
 
                 return originalValue;
             };
@@ -50,6 +60,11 @@ tagsInput.directive('tiAutosize', function(tagsInputConfig) {
                 if (!ctrl.$modelValue) {
                     resize(value);
                 }
+            });
+
+            angular.element($window).bind('resize', function () {
+                scope.$apply();
+                resize(ctrl.$modelValue);
             });
         }
     };

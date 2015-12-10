@@ -50,6 +50,7 @@
  * @param {expression=} [onTagClicked=NA] Expression to evaluate upon clicking an existing tag. The clicked tag is available as $tag.
  * @param {expression=} [getTagClass=NA] Determine a custom class for the tag (if any). The clicked tag is available as $tag.
  * @param {expression=} [getTagStructure=NA] Determine a custom class for the tag (if any). The clicked tag is available as $tag.
+ * @param {expression=} [pasteSplitter=NA]
  */
 tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInputConfig, tiUtil) {
     function TagList(options, events, onTagAdding, onTagRemoving) {
@@ -210,7 +211,8 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             onTagRemoved: '&',
             onTagClicked: '&',
             getTagClass: '&',
-            getTagStructure: '&'
+            getTagStructure: '&',
+            pasteSplitter: '&'
         },
         replace: false,
         transclude: true,
@@ -221,7 +223,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             tagsInputConfig.load('tagsInput', $scope, $attrs, {
                 template: [String, 'ngTagsInput/tag-item.html'],
                 type: [String, 'text', validateType],
-                placeholder: [String, 'Add a tag'],
+                placeholder: [String, ''],
                 tabindex: [Number, null],
                 removeTagSymbol: [String, String.fromCharCode(215)],
                 replaceSpacesWithDashes: [Boolean, true],
@@ -251,7 +253,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                 tiUtil.handleUndefinedResult($scope.onTagRemoving, true));
 
             this.registerAutocomplete = function() {
-                var input = $element.find('input');
+                var input = $element.find('textarea');
 
                 return {
                     addTag: function(tag) {
@@ -298,7 +300,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                 tagList = scope.tagList,
                 events = scope.events,
                 options = scope.options,
-                input = element.find('input'),
+                input = element.find('textarea'),
                 validationOptions = ['minTags', 'maxTags', 'allowLeftoverText'],
                 setElementValidity;
 
@@ -484,9 +486,32 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                 return (txt.match(/'/g)||[]).length % 2;
             }
 
+            function addText(event, text, pasting) {
+                var tags = [];
+                if (scope.pasteSplitter()) {
+                    tags = scope.pasteSplitter()(text);
+                }
+
+                if (!tags || tags.length == 0) {
+                    if (pasting) {
+                        tags = text.split(options.pasteSplitPattern);
+                    } else {
+                        tags = [text];
+                    }
+                }
+
+                if ((pasting && tags.length >= 2) || (!pasting && tags.length >= 1)) {
+                    tags.forEach(function(tag) {
+                        tagList.addText(tag);
+                    });
+                    event.preventDefault();
+                }
+            }
+
+
             function handleKeyEvent(event, key, shouldAdd, shouldEditLastTag, shouldRemove, shouldSelect) {
                 if (shouldAdd) {
-                    tagList.addText(scope.newTag.text());
+                    addText(event, scope.newTag.text(), false);
                 }
                 else if (shouldEditLastTag) {
                     var tag;
@@ -583,22 +608,14 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                         shouldAdd |= options.addOnSemicolon && key === CHARCODES.semicolon;
                         shouldAdd &= !options.addFromAutocompleteOnly;
                         if (shouldAdd && tagList.tagIsComplete(text)) {
-                            tagList.addText(text);
-                            event.preventDefault();
+                            addText(event, text, false);
                         }
                     }
                 })
                 .on('input-paste', function(event) {
                     if (options.addOnPaste) {
-                        var data = event.getTextData();
-                        var tags = data.split(options.pasteSplitPattern);
-
-                        if (tags.length > 1) {
-                            tags.forEach(function(tag) {
-                                tagList.addText(tag);
-                            });
-                            event.preventDefault();
-                        }
+                        var text = event.getTextData();
+                        addText(event, text, true);
                     }
                 });
         }
