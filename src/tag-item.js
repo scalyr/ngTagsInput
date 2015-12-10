@@ -30,7 +30,6 @@ tagsInput.directive('tiTagItem', function(tiUtil, $window) {
             span.text('00000000000000000000');
             span.css('display', '');
             singleCharWidth = span.prop('offsetWidth') / 20;
-            console.log("Computed width: " + width);
             span.css('display', 'none');
         }
         return singleCharWidth;
@@ -56,8 +55,9 @@ tagsInput.directive('tiTagItem', function(tiUtil, $window) {
 
                 // assuming that availableWidth==0 indicates a unit test, where we don't want to ellipsify
                 if (availableWidth > 0) {
-                    if (txt.length > 5 && txt.length > availableWidth / getCharWidth(element)) {
-                        txt = txt.substring(0, availableWidth / getCharWidth(element) - 5) + "...";
+                    // 7 leaves enough room for both the ellipsis and the 'remove-tag' button at the end
+                    if (txt.length > 7 && txt.length > availableWidth / getCharWidth(element)) {
+                        txt = txt.substring(0, availableWidth / getCharWidth(element) - 7) + '...';
                     }
                 }
                 return txt;

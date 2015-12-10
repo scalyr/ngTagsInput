@@ -492,7 +492,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     tags = scope.pasteSplitter()(text);
                 }
 
-                if (!tags || tags.length == 0) {
+                if (!tags || tags.length === 0) {
                     if (pasting) {
                         tags = text.split(options.pasteSplitPattern);
                     } else {

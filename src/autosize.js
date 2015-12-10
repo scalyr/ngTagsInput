@@ -39,9 +39,13 @@ tagsInput.directive('tiAutosize', function(tagsInputConfig, $window) {
                 }
 
                 var maxWidth = element.parent()[0].offsetWidth - 5;
-                if (maxWidth < 10) maxWidth = 10;
+                if (maxWidth < 10) {
+                    maxWidth = 10;
+                }
                 var height = width/maxWidth;
-                if (width > maxWidth) width = maxWidth;
+                if (width > maxWidth) {
+                    width = maxWidth;
+                }
                 element.css('width', width ? width + threshold + 'px' : '');
                 if (height <1) {
                     element.css('height', '26px');
