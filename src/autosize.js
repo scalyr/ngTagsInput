@@ -29,6 +29,9 @@ tagsInput.directive('tiAutosize', function(tagsInputConfig, $window) {
 
                 if (angular.isString(value) && value.length === 0) {
                     value = attrs.placeholder;
+                    if (angular.isString(value) && value.length === 0) {
+                        value = '0';
+                    }
                 }
 
                 if (value) {

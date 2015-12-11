@@ -64,7 +64,7 @@ tagsInput.directive('tiTagItem', function(tiUtil, $window) {
             };
 
             scope.$getTagClass = function() {
-                return tagsInputCtrl.getTagClass( { $tag: { text: scope.$getDisplayText() }} );
+                return tagsInputCtrl.getTagClass( { $tag: { text: scope.data[options.displayProperty] }} );
             };
 
             scope.$getTagStructure = function() {
