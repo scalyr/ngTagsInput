@@ -37,7 +37,7 @@ tagsInput.directive('tiAutosize', function(tagsInputConfig, $window) {
                 if (value) {
                     span.text(value);
                     span.css('display', '');
-                    width = span.prop('offsetWidth');
+                    width = span.prop('offsetWidth') + 4;  // the 4 is to address sizing finickyness on iOS
                     span.css('display', 'none');
                 }
 
