@@ -29,15 +29,16 @@ tagsInput.directive('tiAutosize', function(tagsInputConfig, $window) {
 
                 if (angular.isString(value) && value.length === 0) {
                     value = attrs.placeholder;
-                    if (angular.isString(value) && value.length === 0) {
-                        value = '0';
-                    }
+                }
+
+                if (angular.isString(value) && value.length === 0) {
+                    value = '0';
                 }
 
                 if (value) {
                     span.text(value);
                     span.css('display', '');
-                    width = span.prop('offsetWidth') + 4;  // the 4 is to address sizing finickyness on iOS
+                    width = span.prop('offsetWidth') + 5;  // the 5 is to address sizing finickyness on iOS
                     span.css('display', 'none');
                 }
 

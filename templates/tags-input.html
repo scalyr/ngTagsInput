@@ -32,6 +32,9 @@
         <ti-tag-item data="::tag"></ti-tag-item>
       </li>
     </ul>
+    <i ng-show="tagList.items.length > 0"
+       ng-click="eventHandlers.host.clearInput()"
+       class="material-icons lighten icon-overlay-on-right clickable close-button">cancel</i>
     <span></span>
   </div>
 </div>

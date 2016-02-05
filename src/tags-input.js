@@ -51,6 +51,7 @@
  * @param {expression=} [getTagClass=NA] Determine a custom class for the tag (if any). The clicked tag is available as $tag.
  * @param {expression=} [getTagStructure=NA] Determine a custom class for the tag (if any). The clicked tag is available as $tag.
  * @param {expression=} [pasteSplitter=NA]
+ * @param {expression=} [onEnterPressed=NA]
  */
 tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInputConfig, tiUtil) {
     function TagList(options, events, onTagAdding, onTagRemoving) {
@@ -212,7 +213,8 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             onTagClicked: '&',
             getTagClass: '&',
             getTagStructure: '&',
-            pasteSplitter: '&'
+            pasteSplitter: '&',
+            onEnterPressed: '&'
         },
         replace: false,
         transclude: true,
@@ -397,34 +399,48 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     }
                 },
                 host: {
+                    clearInput: function() {
+                        if (scope.disabled) {
+                            return;
+                        }
+
+                        scope.tags = [];
+
+                        $timeout(function() {
+                            input[0].focus();
+                        });
+                    },
                     // TODO fix DRY here
                     mousedown: function(event) {
                         if (scope.disabled) {
                             return;
                         }
 
-                        $timeout(function() {
-                            if (angular.element(event.target).hasClass('tags') && tagList.editPosition !== -1) {
-                                if (options.addOnBlur && !options.addFromAutocompleteOnly) {
-                                    tagList.addText(scope.newTag.text());
+                        if (angular.element(event.target).hasClass('tags')) {
+                            $timeout(function() {
+                                if (tagList.editPosition !== -1) {
+                                    if (options.addOnBlur && !options.addFromAutocompleteOnly) {
+                                        tagList.addText(scope.newTag.text());
+                                    }
                                 }
-                            }
-                            input[0].focus();
-                        });
+                                input[0].focus();
+                            });
+                        }
                     },
                     click: function(event) {
                         if (scope.disabled) {
                             return;
                         }
-
-                        $timeout(function() {
-                            if (angular.element(event.target).hasClass('tags') && tagList.editPosition !== -1) {
-                                if (options.addOnBlur && !options.addFromAutocompleteOnly) {
-                                    tagList.addText(scope.newTag.text());
+                        if (angular.element(event.target).hasClass('tags')) {
+                            $timeout(function() {
+                                if (angular.element(event.target).hasClass('tags') && tagList.editPosition !== -1) {
+                                    if (options.addOnBlur && !options.addFromAutocompleteOnly) {
+                                        tagList.addText(scope.newTag.text());
+                                    }
                                 }
-                            }
-                            input[0].focus();
-                        });
+                                input[0].focus();
+                            });
+                        }
                     }
                 },
                 tag: {
@@ -512,6 +528,10 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             function handleKeyEvent(event, key, shouldAdd, shouldEditLastTag, shouldRemove, shouldSelect) {
                 if (shouldAdd) {
                     addText(event, scope.newTag.text(), false);
+
+                    if (scope.onEnterPressed()) {
+                        scope.onEnterPressed()();
+                    }
                 }
                 else if (shouldEditLastTag) {
                     var tag;
@@ -596,7 +616,11 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     shouldEditLastTag = key === KEYCODES.backspace && isEmpty() && options.enableEditingLastTag;
                     shouldSelect = (key === KEYCODES.backspace || key === KEYCODES.left || key === KEYCODES.right) && isEmpty() && !options.enableEditingLastTag;
 
-                    handleKeyEvent(event, key, shouldAdd, shouldEditLastTag, shouldRemove, shouldSelect);
+                    if (key === KEYCODES.enter && isEmpty()) {
+                        event.preventDefault();
+                    } else {
+                        handleKeyEvent(event, key, shouldAdd, shouldEditLastTag, shouldRemove, shouldSelect);
+                    }
                 })
                 .on('input-keypress', function(event) {
                     var key = event.charCode,

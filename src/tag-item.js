@@ -55,9 +55,9 @@ tagsInput.directive('tiTagItem', function(tiUtil, $window) {
 
                 // assuming that availableWidth==0 indicates a unit test, where we don't want to ellipsify
                 if (availableWidth > 0) {
-                    // 7 leaves enough room for both the ellipsis and the 'remove-tag' button at the end
-                    if (txt.length > 8 && txt.length > availableWidth / getCharWidth(element)) {
-                        txt = txt.substring(0, availableWidth / getCharWidth(element) - 8) + '...';
+                    // 10 leaves enough room for both the ellipsis and the 'remove-tag' button at the end
+                    if (txt.length > 10 && txt.length > availableWidth / getCharWidth(element)) {
+                        txt = txt.substring(0, availableWidth / getCharWidth(element) - 10) + '...';
                     }
                 }
                 return txt;
