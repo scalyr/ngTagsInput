@@ -10,7 +10,7 @@ var KEYCODES = {
     down: 40,
     left: 37,
     right: 39,
-    delete: 46
+    deleteKey: 46
 };
 
 var CHARCODES = {

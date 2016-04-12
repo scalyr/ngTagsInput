@@ -49,6 +49,7 @@
  *    available as $tag.
  * @param {expression=} [onTagClicked=NA] Expression to evaluate upon clicking an existing tag. The clicked tag is available as $tag.
  * @param {expression=} [getTagClass=NA] Determine a custom class for the tag (if any). The clicked tag is available as $tag.
+ * @param {expression=} [getErrorMessage=NA] Determine error message for a tag (if any). The clicked tag is available as $tag.
  * @param {expression=} [getTagStructure=NA] Determine a custom class for the tag (if any). The clicked tag is available as $tag.
  * @param {expression=} [pasteSplitter=NA]
  * @param {expression=} [onEnterPressed=NA]
@@ -213,6 +214,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             onTagClicked: '&',
             getTagClass: '&',
             getTagStructure: '&',
+            getErrorMessage: '&',
             pasteSplitter: '&',
             onEnterPressed: '&'
         },
@@ -296,9 +298,10 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
 
             this.getTagClass = $scope.getTagClass;
             this.getTagStructure = $scope.getTagStructure;
+            this.getErrorMessage = $scope.getErrorMessage;
         },
         link: function(scope, element, attrs, ngModelCtrl) {
-            var hotkeys = [KEYCODES.enter, KEYCODES.space, KEYCODES.backspace, KEYCODES.delete, KEYCODES.left, KEYCODES.right, KEYCODES.tab],
+            var hotkeys = [KEYCODES.enter, KEYCODES.space, KEYCODES.backspace, KEYCODES.deleteKey, KEYCODES.left, KEYCODES.right, KEYCODES.tab],
                 tagList = scope.tagList,
                 events = scope.events,
                 options = scope.options,
@@ -612,7 +615,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     addKeys[KEYCODES.tab] = options.addOnTab && !isEmpty();
 
                     shouldAdd = !options.addFromAutocompleteOnly && addKeys[key];
-                    shouldRemove = (key === KEYCODES.backspace || key === KEYCODES.delete) && tagList.selected;
+                    shouldRemove = (key === KEYCODES.backspace || key === KEYCODES.deleteKey) && tagList.selected;
                     shouldEditLastTag = key === KEYCODES.backspace && isEmpty() && options.enableEditingLastTag;
                     shouldSelect = (key === KEYCODES.backspace || key === KEYCODES.left || key === KEYCODES.right) && isEmpty() && !options.enableEditingLastTag;
 
