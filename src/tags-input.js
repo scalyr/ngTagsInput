@@ -66,6 +66,16 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             tag[options.displayProperty] = text;
         };
 
+        self.isCurrentlyEditing = function(tag) {
+            var tagText = getTagText(tag);
+            for (var i=0; i<self.items.length; i++) {
+                if (self.items[i][options.displayProperty] === tagText) {
+                    return self.editPosition === i;
+                }
+            }
+            return false;
+        };
+
         tagIsValid = function(tag) {
             var tagText = getTagText(tag);
 
@@ -73,7 +83,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                    tagText.length >= options.minLength &&
                    tagText.length <= options.maxLength &&
                    options.allowedTagsPattern.test(tagText) &&
-                   !tiUtil.findInObjectArray(self.items, tag, options.keyProperty || options.displayProperty) &&
+                   (self.isCurrentlyEditing(tag) || !tiUtil.findInObjectArray(self.items, tag, options.keyProperty || options.displayProperty)) &&
                    onTagAdding({ $tag: tag });
         };
 
@@ -91,7 +101,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             if (self.editPosition === -1) {
                 return [];
             }
-            return self.items.slice(self.editPosition);
+            return self.items.slice(self.editPosition + 1);
         };
 
         self.tagIsComplete = function(text) {
@@ -115,7 +125,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
 
             if (tagIsValid(tag)) {
                 if (self.editPosition !== -1) {
-                    self.items.splice(self.editPosition, 0, tag);
+                    self.items.splice(self.editPosition, 1, tag);
                     self.editPosition = -1;
                 } else {
                     self.items.push(tag);
@@ -165,21 +175,33 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
 
         self.selectPrior = function() {
             self.select(--self.index);
+            return self.items[self.index];
         };
 
         self.selectNext = function() {
             self.select(++self.index);
+            return self.items[self.index];
         };
 
         self.editSelected = function(tag) {
             for (var i=0; i<self.items.length; i++) {
                 if (self.items[i] === tag) {
-                    self.items.splice(i, 1);
                     self.editPosition = i;
                     self.index = i;
                     return;
                 }
             }
+        };
+
+        self.removeTagBeingEdited = function(shouldStartEditingPrevious) {
+            var rv = null;
+            if (self.editPosition >= -1) {
+                rv = self.remove(self.editPosition);
+            }
+            if (self.editPosition > 0) {
+                self.editSelected(self.items[self.editPosition]);
+            }
+            return rv;
         };
 
         self.removeSelected = function() {
@@ -519,7 +541,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     }
                 }
 
-                if ((pasting && tags.length >= 2) || (!pasting && tags.length >= 1)) {
+                if ((pasting && tags.length >= 2) || (!pasting)) {
                     tags.forEach(function(tag) {
                         tagList.addText(tag);
                     });
@@ -527,23 +549,30 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                 }
             }
 
+            function removeTagBeingEdited(shouldStartEditingPrecedingTag) {
+                tagList.removeTagBeingEdited(shouldStartEditingPrecedingTag);
+            }
+
 
             function handleKeyEvent(event, key, shouldAdd, shouldEditLastTag, shouldRemove, shouldSelect) {
                 if (shouldAdd) {
                     addText(event, scope.newTag.text(), false);
 
-                    if (scope.onEnterPressed()) {
+                    if (scope.onEnterPressed() && event.keyCode === KEYCODES.enter) {
                         scope.onEnterPressed()();
                     }
                 }
                 else if (shouldEditLastTag) {
                     var tag;
 
-                    tagList.selectPrior();
-                    tag = tagList.removeSelected();
+                    tag = tagList.selectPrior();
 
                     if (tag) {
+                        tagList.editSelected(tag);
                         scope.newTag.text(tag[options.displayProperty]);
+                        $timeout(function() {
+                            input[0].focus();
+                        });
                     }
                 }
                 else if (shouldRemove) {
@@ -619,7 +648,13 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     shouldEditLastTag = key === KEYCODES.backspace && isEmpty() && options.enableEditingLastTag;
                     shouldSelect = (key === KEYCODES.backspace || key === KEYCODES.left || key === KEYCODES.right) && isEmpty() && !options.enableEditingLastTag;
 
+                    if ((key === KEYCODES.backspace || KEYCODES.deleteKey === key) && isEmpty() && tagList.editPosition !== -1) {
+                        event.preventDefault();
+                        removeTagBeingEdited(true);
+                    }
+
                     if (key === KEYCODES.enter && isEmpty()) {
+                        removeTagBeingEdited();
                         event.preventDefault();
                     } else {
                         handleKeyEvent(event, key, shouldAdd, shouldEditLastTag, shouldRemove, shouldSelect);
