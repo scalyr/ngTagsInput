@@ -530,7 +530,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             function addText(event, text, pasting) {
                 var tags = [];
                 if (scope.pasteSplitter()) {
-                    tags = scope.pasteSplitter()(text);
+                    tags = scope.pasteSplitter()(text, scope.newTag.text());
                 }
 
                 if (!tags || tags.length === 0) {
