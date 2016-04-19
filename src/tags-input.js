@@ -29,7 +29,10 @@
  * @param {boolean=} [addOnComma=true] Flag indicating that a new tag will be added on pressing the COMMA key.
  * @param {boolean=} [addOnTab=true] Flag indicating that a new tag will be added on pressing the TAB key.
  * @param {boolean=} [addOnSemicolon=False] Flag indicating that a new tag will be added on pressing the SEMICOLON key.
- * @param {boolean=} [addOnBlur=true] Flag indicating that a new tag will be added when the input field loses focus.
+ * @param {boolean=} [addOnBlur=true] Flag indicating that a new tag will be added when the input field loses focus to
+ *    another element on the current browser window or tab.
+ * @param {boolean=} [addOnWindowBlur=true] Flag indicating that a new tag will be added when the browser window or tab
+ *    becomes inactive.
  * @param {boolean=} [addOnPaste=false] Flag indicating that the text pasted into the input field will be split into tags.
  * @param {string=} [pasteSplitPattern=,] Regular expression used to split the pasted text into tags.
  * @param {boolean=} [replaceSpacesWithDashes=true] Flag indicating that spaces will be replaced with dashes.
@@ -261,6 +264,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                 addOnTab: [Boolean, false],
                 addOnSemicolon: [Boolean, false],
                 addOnBlur: [Boolean, true],
+                addOnWindowBlur: [Boolean, true],
                 addOnPaste: [Boolean, false],
                 pasteSplitPattern: [RegExp, /,/],
                 allowedTagsPattern: [RegExp, /.+/],
@@ -330,6 +334,10 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                 input = element.find('textarea'),
                 validationOptions = ['minTags', 'maxTags', 'allowLeftoverText'],
                 setElementValidity;
+
+            var addOnBlur = function() {
+                return options.addOnBlur || options.addOnWindowBlur;
+            };
 
             setElementValidity = function() {
                 ngModelCtrl.$setValidity('maxTags', tagList.items.length <= options.maxTags);
@@ -409,6 +417,10 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                                 lostFocusToBrowserWindow = activeElement === input[0],
                                 lostFocusToChildElement = element[0].contains(activeElement);
 
+                            if (!options.addOnWindowBlur && lostFocusToBrowserWindow && lostFocusToChildElement) {
+                                return;
+                            }
+
                             if (lostFocusToBrowserWindow || !lostFocusToChildElement) {
                                 scope.hasFocus = false;
                                 events.trigger('input-blur');
@@ -444,7 +456,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                         if (angular.element(event.target).hasClass('tags')) {
                             $timeout(function() {
                                 if (tagList.editPosition !== -1) {
-                                    if (options.addOnBlur && !options.addFromAutocompleteOnly) {
+                                    if (addOnBlur() && !options.addFromAutocompleteOnly) {
                                         tagList.addText(scope.newTag.text());
                                     }
                                 }
@@ -459,7 +471,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                         if (angular.element(event.target).hasClass('tags')) {
                             $timeout(function() {
                                 if (angular.element(event.target).hasClass('tags') && tagList.editPosition !== -1) {
-                                    if (options.addOnBlur && !options.addFromAutocompleteOnly) {
+                                    if (addOnBlur() && !options.addFromAutocompleteOnly) {
                                         tagList.addText(scope.newTag.text());
                                     }
                                 }
@@ -479,7 +491,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                         event.preventDefault();
                         event.stopPropagation();
 
-                        if (options.addOnBlur && !options.addFromAutocompleteOnly) {
+                        if (addOnBlur() && !options.addFromAutocompleteOnly) {
                             tagList.addText(scope.newTag.text());
                         }
 //                        element.triggerHandler('blur');
@@ -499,7 +511,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                         event.preventDefault();
                         event.stopPropagation();
 
-                        if (options.addOnBlur && !options.addFromAutocompleteOnly) {
+                        if (addOnBlur() && !options.addFromAutocompleteOnly) {
                             tagList.addText(scope.newTag.text());
                         }
 //                        element.triggerHandler('blur');
@@ -624,7 +636,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     ngModelCtrl.$setValidity('leftoverText', true);
                 })
                 .on('input-blur', function() {
-                    if (options.addOnBlur && !options.addFromAutocompleteOnly) {
+                    if (addOnBlur() && !options.addFromAutocompleteOnly) {
                         tagList.addText(scope.newTag.text());
                     }
                     element.triggerHandler('blur');
