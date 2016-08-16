@@ -54,8 +54,9 @@
  * @param {expression=} [getTagClass=NA] Determine a custom class for the tag (if any). The clicked tag is available as $tag.
  * @param {expression=} [getErrorMessage=NA] Determine error message for a tag (if any). The clicked tag is available as $tag.
  * @param {expression=} [getTagStructure=NA] Determine a custom class for the tag (if any). The clicked tag is available as $tag.
- * @param {expression=} [pasteSplitter=NA]
- * @param {expression=} [onEnterPressed=NA]
+ * @param {expression=} [pasteSplitter=NA] Expression to evaluate when the user pastes text into the control.
+ * @param {expression=} [onEnterPressed=NA] Expression to evaluate when the user types Enter (can be used to override normal behavior).
+ * @param {expression=} [onSelectAll=NA] Expression to evaluate when the user types Command-A or Control-A (can be used to override default Select All behavior).
  */
 tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInputConfig, tiUtil) {
     function TagList(options, events, onTagAdding, onTagRemoving) {
@@ -196,12 +197,13 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             }
         };
 
-        self.removeTagBeingEdited = function(shouldStartEditingPrevious) {
+        self.removeTagBeingEdited = function (shouldStartEditingPrevious) {
             var rv = null;
-            if (self.editPosition >= -1) {
+            if (self.editPosition >= 0) {
                 rv = self.remove(self.editPosition);
             }
-            if (self.editPosition > 0) {
+
+            if (self.editPosition > 0 && shouldStartEditingPrevious) {
                 self.editSelected(self.items[self.editPosition]);
             }
             return rv;
@@ -241,7 +243,8 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             getTagStructure: '&',
             getErrorMessage: '&',
             pasteSplitter: '&',
-            onEnterPressed: '&'
+            onEnterPressed: '&',
+            onSelectAll: '&'
         },
         replace: false,
         transclude: true,
@@ -531,7 +534,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
             };
 
             function isEmpty() {
-                return scope.newTag.text().length === 0;
+                return scope.newTag.text().trim().length === 0;
             }
 
             function inQuotedString() {
@@ -637,7 +640,14 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                 })
                 .on('input-blur', function() {
                     if (addOnBlur() && !options.addFromAutocompleteOnly) {
-                        tagList.addText(scope.newTag.text());
+                        if (isEmpty()) {
+                            if (tagList.editPosition !== -1) {
+                                removeTagBeingEdited(false);
+                                tagList.editPosition = -1;
+                            }
+                        } else {
+                            tagList.addText(scope.newTag.text());
+                        }
                     }
                     element.triggerHandler('blur');
                     setElementValidity();
@@ -646,6 +656,19 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     var key = event.keyCode,
                         addKeys = {},
                         shouldAdd, shouldRemove, shouldSelect, shouldEditLastTag;
+
+                    // select all
+                    if (event.keyCode == KEYCODES.keyA && (event.metaKey || event.ctrlKey)) {
+                        var isMac = navigator.userAgent.indexOf('Mac OS X') >= 0;
+                        if (event.metaKey && isMac || event.ctrlKey && !isMac) {
+                            // if custom select all function was provided, avoid default behavior
+                            if (scope.onSelectAll()) {
+                                event.preventDefault();
+                                scope.onSelectAll()();
+                                return;
+                            }
+                        }
+                    }
 
                     if (tiUtil.isModifierOn(event) || hotkeys.indexOf(key) === -1) {
                         return;
@@ -662,12 +685,20 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
 
                     if ((key === KEYCODES.backspace || KEYCODES.deleteKey === key) && isEmpty() && tagList.editPosition !== -1) {
                         event.preventDefault();
-                        removeTagBeingEdited(true);
+                        if (tagList.editPosition) {
+                            removeTagBeingEdited(true);
+                        } else {
+                            // don't do anything if we're editing the first tag
+                            return;
+                        }
                     }
 
                     if (key === KEYCODES.enter && isEmpty()) {
-                        removeTagBeingEdited();
                         event.preventDefault();
+                        if (tagList.editPosition !== -1) {
+                            removeTagBeingEdited(false);
+                            tagList.editPosition = -1;
+                        }
                     } else {
                         handleKeyEvent(event, key, shouldAdd, shouldEditLastTag, shouldRemove, shouldSelect);
                     }
